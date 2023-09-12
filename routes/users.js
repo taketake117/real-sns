@@ -50,14 +50,30 @@ router.delete("/:id", async(req,res) => {
 
 //ユーザー情報の取得
 //タイムラインの情報など取得
-router.get("/:id", async(req,res) => {
+// router.get("/:id", async(req,res) => {
+//     try{
+//         //ユーザー取得
+//         const user = await User.findById(req.params.id);
+//         //分割代入操作、PW、Updata、その他を分割して追加。
+//         const { password, updatedAt, ...other } = user._doc;
+//         //分割代入でPWとUpdated以外のものを取得
+//         return res.status(200).json(other);
+//     }catch(err){
+//         return res.status(500).json(err);
+//     }
+// });
+
+//クエリでユーザー情報を取得する。
+router.get("/", async(req,res) => {
+    const userId = req.query.userId;
+    const username = req.query.username;
     try{
-        //ユーザー取得
-        const user = await User.findById(req.params.id);
+        const user = userId ? await User.findById(userId) : await User.findOne({username: username});
+
         //分割代入操作、PW、Updata、その他を分割して追加。
         const { password, updatedAt, ...other } = user._doc;
         //分割代入でPWとUpdated以外のものを取得
-        res.status(200).json(other);
+        return res.status(200).json(other);
     }catch(err){
         return res.status(500).json(err);
     }
@@ -95,6 +111,42 @@ router.put("/:id/follow", async (req,res) => {
         }
     }else{
         return res.status(500).json("自分自身をフォローはできません");
+    }
+});
+
+
+//ユーザーをフォローを外す処理
+router.put("/:id/unfollow", async (req,res) => {
+    if(req.body.userId !== req.params.id){
+        try{
+            //相手のユーザーID
+            const user = await User.findById(req.params.id);
+            //自身のユーザーID
+            const currentUser = await User.findById(req.body.userId);
+            
+            //フォロワーに存在した場合は外す
+            if(user.followers.includes(req.body.userId)){
+                //相手に自信を登録
+                await user.updateOne({
+                    $pull: {
+                        followers: req.body.userId,
+                    },
+                });
+                //自身に相手のフォロー情報を登録
+                await currentUser.updateOne({
+                    $pull: {
+                        followings: req.params.id,
+                    },
+                });
+                return res.status(200).json("フォロー解除しました。");
+            }else{
+                return res.status(403).json("このユーザーはフォロー解除できません");
+            }
+        }catch(err){
+            return res.status(500).json(err);
+        }
+    }else{
+        return res.status(500).json("自分自身をフォロー解除はできません");
     }
 });
 

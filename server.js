@@ -7,7 +7,7 @@ const authRoute = require("./routes/auth");
 const postRoute = require("./routes/posts");
 //PORTは港という意味、ポート番号を好きに設定できる。
 //どこでサーバーを立てるか決める
-const PORT = 3000;
+const PORT = 5000;
 require("dotenv").config();
 
 //データベース接続（mongoDB)
